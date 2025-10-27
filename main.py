@@ -4,7 +4,10 @@ Jour 3: Embeddings & Index implementation
 """
 
 import os
+import sys
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from loguru import logger
@@ -12,25 +15,22 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-print(f"os.getenv('PROJECT_ID'): {os.getenv('PROJECT_ID')}")
+
+# Add current directory to Python path for imports
+sys.path.append(str(Path(__file__).parent))
 
 # Import RAG service
 from knowledge_copilot.rag_service import create_rag_service
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="DocPilot RAG API",
-    description="Document indexing and semantic search with Vertex AI embeddings and pgvector",
-    version="1.0.0"
-)
-
-# Initialize RAG service
+# Global variable for RAG service
 rag_service = None
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize RAG service on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize and cleanup RAG service"""
     global rag_service
+    
+    # Startup
     try:
         logger.info("Initializing DocPilot RAG service...")
         rag_service = create_rag_service(project_id=os.getenv("PROJECT_ID"))
@@ -38,6 +38,19 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to initialize RAG service: {e}")
         raise
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down DocPilot RAG service")
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="DocPilot RAG API",
+    description="Document indexing and semantic search with Vertex AI embeddings and pgvector",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 
 # Pydantic models for API requests/responses
