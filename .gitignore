@@ -1,0 +1,6 @@
+.cache/
+kc-drive-sa.json
+__pycache__/
+.env
+.vscode/
+*.pyc

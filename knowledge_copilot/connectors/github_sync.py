@@ -198,17 +198,20 @@ def scan_repo_folder(root: Path, repo_full: str, branch: str) -> List[Dict]:
     return docs
 
 # ---------- Chunking ----------
-from utils.chunking import chunk_text
+from ..utils.chunking import chunk_text
 
 def to_chunks(doc: Dict, max_tokens=1000, overlap=100) -> List[Dict]:
     chunks = chunk_text(doc["raw_text"], max_tokens, overlap)
     out = []
     for i, ch in enumerate(chunks):
+        # Calculer approx_tokens si pas présent
+        approx_tokens = ch.get("approx_tokens", max(1, len(ch["text"]) // 4))
+        
         out.append({
             "doc_content_hash": doc["content_hash"],
             "chunk_index": i,
             "text": ch["text"],
-            "approx_tokens": ch["approx_tokens"],
+            "approx_tokens": approx_tokens,
             "metadata": {
                 **doc["metadata"],
                 "title": doc["title"],

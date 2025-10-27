@@ -141,7 +141,11 @@ uv add google-cloud-aiplatform asyncpg pgvector fastapi uvicorn pydantic
 
 ### 2. Setup de la base de données
 ```bash
-psql -d your_database -f setup_database.sql
+gcloud beta sql connect kc-postgres \
+  --project=docpilot-gcp \
+  --user=postgres \
+  --database=kcdb \
+  < setup_database.sql
 ```
 
 ### 3. Lancement de l'application

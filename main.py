@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+print(f"os.getenv('PROJECT_ID'): {os.getenv('PROJECT_ID')}")
 
 # Import RAG service
 from knowledge_copilot.rag_service import create_rag_service
@@ -32,7 +33,7 @@ async def startup_event():
     global rag_service
     try:
         logger.info("Initializing DocPilot RAG service...")
-        rag_service = create_rag_service()
+        rag_service = create_rag_service(project_id=os.getenv("PROJECT_ID"))
         logger.info("DocPilot RAG service initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize RAG service: {e}")
