@@ -172,9 +172,12 @@ class DatabaseService:
             # Generate embedding for query
             query_embedding = self.embeddings_service.get_embedding(query)
             
+            # Convert embedding to string format for pgvector
+            embedding_str = f"[{','.join(map(str, query_embedding))}]"
+            
             with self.SessionLocal() as db:
-                # Build search query with vector similarity
-                similarity_query = text("""
+                # Build search query with vector similarity using formatted string
+                sql_query = f"""
                     SELECT 
                         c.id,
                         c.text,
@@ -183,21 +186,15 @@ class DatabaseService:
                         d.uri,
                         d.title,
                         d.mime,
-                        (c.embedding <-> :query_embedding) as distance
+                        (c.embedding <-> '{embedding_str}'::vector) as distance
                     FROM chunks c
                     JOIN documents d ON c.doc_id = d.id
-                    ORDER BY c.embedding <-> :query_embedding
-                    LIMIT :limit
-                """)
+                    ORDER BY c.embedding <-> '{embedding_str}'::vector
+                    LIMIT {limit}
+                """
                 
                 # Execute search
-                results = db.execute(
-                    similarity_query,
-                    {
-                        "query_embedding": query_embedding,
-                        "limit": limit
-                    }
-                ).fetchall()
+                results = db.execute(text(sql_query)).fetchall()
                 
                 # Format results
                 search_results = []
@@ -275,20 +272,24 @@ def create_database_service(
         Configured DatabaseService instance
     """
     if not database_url:
-        # Build database URL from environment variables
-        sql_instance = os.getenv("SQL_INSTANCE")
-        sql_db = os.getenv("SQL_DB", "kcdb")
-        sql_user = os.getenv("SQL_USER", "postgres")
-        sql_password = os.getenv("SQL_PASSWORD")
+        # Priorité à DATABASE_URL pour connexion locale
+        database_url = os.getenv("DATABASE_URL")
         
-        if sql_instance and sql_password:
-            # Cloud SQL format
-            database_url = f"postgresql://{sql_user}:{sql_password}@/{sql_db}?host=/cloudsql/{sql_instance}"
-        else:
-            # Local PostgreSQL
-            host = os.getenv("DB_HOST", "localhost")
-            port = os.getenv("DB_PORT", "5432")
-            database_url = f"postgresql://{sql_user}:{sql_password}@{host}:{port}/{sql_db}"
+        if not database_url:
+            # Build database URL from environment variables
+            sql_instance = os.getenv("SQL_INSTANCE")
+            sql_db = os.getenv("SQL_DB", "kcdb")
+            sql_user = os.getenv("SQL_USER", "postgres")
+            sql_password = os.getenv("SQL_PASSWORD")
+            
+            if sql_instance and sql_password:
+                # Cloud SQL format
+                database_url = f"postgresql://{sql_user}:{sql_password}@/{sql_db}?host=/cloudsql/{sql_instance}"
+            else:
+                # Local PostgreSQL
+                host = os.getenv("DB_HOST", "localhost")
+                port = os.getenv("DB_PORT", "5432")
+                database_url = f"postgresql://{sql_user}:{sql_password}@{host}:{port}/{sql_db}"
     
     return DatabaseService(
         database_url=database_url,
