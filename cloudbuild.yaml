@@ -1,0 +1,61 @@
+# Cloud Build configuration for Knowledge Copilot MCP Server
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/knowledge-copilot:$BUILD_ID',
+      '-t', 'gcr.io/$PROJECT_ID/knowledge-copilot:latest',
+      '.'
+    ]
+
+  # Push the Docker image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'gcr.io/$PROJECT_ID/knowledge-copilot:$BUILD_ID'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push', 
+      'gcr.io/$PROJECT_ID/knowledge-copilot:latest'
+    ]
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run', 'deploy', 'knowledge-copilot',
+      '--image', 'gcr.io/$PROJECT_ID/knowledge-copilot:$BUILD_ID',
+      '--region', 'europe-west1',
+      '--platform', 'managed',
+      '--allow-unauthenticated=false',
+      '--memory', '1Gi',
+      '--cpu', '1',
+      '--max-instances', '10',
+      '--min-instances', '1',
+      '--port', '8080',
+      '--timeout', '900',
+      '--concurrency', '80',
+      '--set-secrets=API_TOKEN=API_TOKEN:latest,GH_PAT=GH_PAT:latest,GH_WEBHOOK_SECRET=GH_WEBHOOK_SECRET:latest',
+      '--set-env-vars=PROJECT_ID=$PROJECT_ID,GCS_BUCKET=knowledge-copilot-cache-$PROJECT_ID,SQL_INSTANCE=kc-postgres,SQL_DB=kcdb,SQL_USER=postgres,EMBED_PROVIDER=vertex,EMBED_MODEL=text-embedding-004,DATABASE_URL=postgresql://postgres@/kcdb?host=/cloudsql/$PROJECT_ID:europe-west1:kc-postgres',
+      '--add-cloudsql-instances', '$PROJECT_ID:europe-west1:kc-postgres'
+    ]
+
+# Build options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+# Build timeout
+timeout: '1200s'
+
+# Images to store in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/knowledge-copilot:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/knowledge-copilot:latest'
+
+# Substitutions for environment variables
+substitutions:
+  _REGION: 'europe-west1'
+  _SERVICE_NAME: 'knowledge-copilot'
