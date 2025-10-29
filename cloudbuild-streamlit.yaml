@@ -1,0 +1,28 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-f'
+      - 'Dockerfile.streamlit'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/docpilot-streamlit:latest'
+      - '.'
+    
+  # Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/${PROJECT_ID}/docpilot-streamlit:latest'
+
+# Store images in Container Registry
+images:
+  - 'gcr.io/${PROJECT_ID}/docpilot-streamlit:latest'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout
+timeout: '1200s'

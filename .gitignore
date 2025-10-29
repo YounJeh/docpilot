@@ -4,3 +4,8 @@ __pycache__/
 .env
 .vscode/
 *.pyc
+JOUR*.md
+GUIDE_*.md
+*.log
+uv.lock
+.python-version

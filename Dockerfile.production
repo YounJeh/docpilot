@@ -1,0 +1,50 @@
+# Dockerfile optimisé pour DocPilot Streamlit
+FROM python:3.13-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    streamlit==1.36.0 \
+    google-cloud-aiplatform==1.122.0 \
+    loguru==0.7.3 \
+    httpx==0.28.1 \
+    openai==1.35.0 \
+    pydantic==2.12.3
+
+# Copy application code
+COPY streamlit_app.py .
+COPY knowledge_copilot/ ./knowledge_copilot/
+COPY README.md .
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
+USER app
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/_stcore/health || exit 1
+
+# Command to run the application
+CMD ["python", "-m", "streamlit", "run", "streamlit_app.py", \
+     "--server.port=8080", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--server.enableCORS=false", \
+     "--server.enableXsrfProtection=false"]

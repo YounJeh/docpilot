@@ -1,0 +1,77 @@
+# Ignore build artifacts and temporary files
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Service account keys
+*.json
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+.coverage
+
+# mypy
+.mypy_cache/
+
+# Docker
+.dockerignore
+
+# Test and example files
+test_*.py
+example_*.py
+*_test.py
+tests/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
